@@ -1,3 +1,6 @@
+#windows file explorer settings file
+.ini
+
 ## Core latex/pdflatex auxiliary files:
 *.aux
 *.lof
