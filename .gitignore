@@ -6,3 +6,7 @@
 *.log
 *.toc
 *.gz
+*.lof
+
+#R stuff
+*.Rhistory

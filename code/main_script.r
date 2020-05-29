@@ -210,8 +210,8 @@ plot_dens_estimates <- function(p_t,a_t,b_t,estimates,main,...){
 }
 
 #Model params
-alpha <- c(0.5,2)
-beta <- c(3,4)
+alpha <- c(2,5)
+beta <- c(3,2)
 pi <- c(0.5,0.5)
 #Number of observations
 n <- 100 #50 100 200 500
@@ -223,7 +223,7 @@ NI <- 10
 smodel <- paste("Tilt of ",make_beta_string(pi,alpha,beta),sep="")
 ftitle <- paste(smodel,", observations: ",n,", replicas: ",R)
 #number of betas in the mix
-K=3
+K=2
 
 mle_parized <- c()
 n_unconverged <- 0 #will count the estimates that terminate before converging
@@ -238,7 +238,7 @@ for (i in 1:R){
   
   #if I try using L-BFGS-B and bounds, I get problems...
   res <- MLestimation(inivs=start,nll=ll_tilted,data=w,method="Nelder-Mead",maxit=500) #lower=c(-Inf,-20,-20,-20,-20),upper=c(Inf,20,20,20,20)
-  #res <- MLestimation(inivs=start,nll=ll_tilted,data=w,method="L-BFGS-B",maxit=500,lower=c(-Inf,-20,-20,-20,-20),upper=c(Inf,20,20,20,20))
+  # res <- MLestimation(inivs=start,nll=ll_tilted,data=w,method="L-BFGS-B",maxit=500,lower=c(-10,-5,-5,-5,-5),upper=c(10,5,5,5,5))
   
   
   if (res$convergence == 1){n_unconverged <- n_unconverged + 1} #count the number of fits that reached maxit

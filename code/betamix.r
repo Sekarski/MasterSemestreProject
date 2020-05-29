@@ -13,6 +13,16 @@ dbetamix <- function(x,p,a,b){
 
 # sampling of a mix of beta distributions V1 ################
 rbetamix <- function(r,p,a,b){
+  n <- length(p)
+  y <- c()
+  idx <- sample(1:n,r,replace=TRUE,prob=p)
+  for (i in 1:r){
+    y <- c(y,rbeta(1,a[idx[i]],b[idx[i]]))
+  }
+  return(y)
+}
+
+rbetamix_old <- function(r,p,a,b){
   y <- c()
   for (i in 1:length(p)) {
     n <- r*p[i]
