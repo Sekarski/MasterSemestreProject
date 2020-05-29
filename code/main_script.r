@@ -3,6 +3,8 @@ source("tilted.r") #loads the tilting of density utilites
 source("simplex2.r") #loads the distribution on s2 where the first component in betamix
 source("algorithm.r") #loads the ML esimating algorithm
 
+load("../data/had_ffwi_wind-SantaAna.RData")
+
 ####################################
 # Auxiliary functions
 ####################################
@@ -143,7 +145,7 @@ for (i in 1:length(pi[1,])){
   #y coordinates of the tilted pdf
   y1 <- dtilted(x,m,dsimplex2,p,a,b)
   
-  plot(x[,1],y1,col="blue",type="l",lwd=3, xlim=c(0,1),ylim=c(0,2),ylab="",main=title1)
+  plot(x[,1],y1,col="blue",type="l",lwd=3, xlim=c(0,1),ylim=c(0,4),ylab="",xlab="x1",main=title1)
   points(x[,1],y1_star,col="red",type="l",lwd=3,lty=2)
   legend("topright", legend=c("v","v*"), col=c("blue","red"), lty=1:2, lwd=3)
   m1_e <- mean(x[,1]*y1)
@@ -296,5 +298,12 @@ pairs(log(mle),main=ftitle)
 dev.off()
 
 
+
+#######################################
+######## Real world data ##############
+######################################
+
+ffwi90q <- quantile(ffwi.mat, c(0.9), na.rm=T)
+wind90q <- quantile(wind.mat, c(0.9), na.rm=T)
 
 

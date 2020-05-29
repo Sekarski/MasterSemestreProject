@@ -54,18 +54,18 @@ G(x,y) = \exp\{-V(x,y)\}, \quad x>0, y>0
 $$
 where
 $$
-V(x,y) = 2 \int^1_0 \max \left(\frac{w}{x},\frac{1-w}{y}\right)dH(w)
+V(x,y) = 2 \int^1_0 \max \left(\frac{w}{x},\frac{1-w}{y}\right)d\nu(w)
 $$
-and $H$ is a distribution on $[0,1]$ satisfying the mean constraint
+and $\nu$ is a distribution on $[0,1]$ satisfying the mean constraint
 $$
-\int_0^1 wdH(w) = 1/2.
+\int_0^1 wd\nu(w) = 1/2.
 $$
 
 
 \end{theorem}
 
 
-The problem is that we don't know how to characterize $H$. An approach is to try and approximate the class arbitrarily well, using parametric subfamilies or nonparametric methods and another way is to use nonparametric methods.
+The problem is that we don't know how to characterize $\nu$. An approach is to try and approximate the class arbitrarily well, using parametric subfamilies or nonparametric methods and another way is to use nonparametric methods.
 
 Boldi and Davison \cite{BoldiDavison} approached the problem by using a semi-parametric model based on mixtures of Dirichlet distributions that weakly approximates the class of limit distributions.
 
@@ -114,14 +114,14 @@ The main tool for tilting distributions is Theorem 2 from the 1991 paper from Co
 If $h^*$ is any positive function on $S_D$ with finite first moments, then
 
 $$
-h(w) = (m^Tw)^{-(D+1)}D^{-1} \left( \prod_{d=1}^{D}m_d \right) h^*\left(\frac{m_1w_1}{m^Tw}, \ldots , \frac{m_Dw_D}{m^Tw}\right),
+\nu(w) = (m^Tw)^{-(D+1)}D^{-1} \left( \prod_{d=1}^{D}m_d \right) \nu^*\left(\frac{m_1w_1}{m^Tw}, \ldots , \frac{m_Dw_D}{m^Tw}\right),
 \quad (w_1,\ldots,w_D) \in S_D,
 $$
 where
 $$
-m_d = \int_{S_D} u_dh^*(u)du, \quad d=1, \ldots ,D,
+m_d = \int_{S_D} u_d\nu^*(u)du, \quad d=1, \ldots ,D,
 $$
-satisfies mean constraints $1/D$ and is therefore the density of a valid measure function $H$.
+satisfies mean constraints $1/D$ and is therefore the density of a valid measure function $\nu$.
 
 \end{theorem}
 
@@ -168,10 +168,22 @@ b^TA^{-1}a &= -\frac{m^Tw + m_D}{m^Tw},
 so 
 $$1 + b^TA^{-1}a = m_D/m^Tw.$$
 
-Therefore, $|\partial w^*/\partial w| = (m^Tw)^{-D} \prod_{d=1}^Dm_d$, so
-
+Therefore, $|\partial w^*/\partial w| = (m^Tw)^{-D} \prod_{d=1}^Dm_d$, so the variable $W=(W_1,\ldots,W_D)$ has the probability density function
+$$
+f(w) = (m^Tw)^{-D} \left(\prod_{d=1}^D m_d\right) \nu^* \left(\frac{m_1w_1}{m^Tw},\ldots,\frac{m_Dw_D}{m^Tw}\right)
+$$
+For every $d$, $W_d^*/m_d$ has unit expectation, which leads to the following equality
+$$
+1 = \mathbb{E} \left( \frac{W_d^*}{m_d} \right) = \mathbb{E} \left( \frac{W_d}{m^TW} \right)
+= \int_{S_{D-1}} w_d (m^Tw)^{-(D+1)} \left(\prod^D_{d=1} m_d \right) \nu^* \left(\frac{m_1w_1}{m^Tw},\ldots,\frac{m_Dw_D}{m^Tw}\right) {\rm d}w
+$$
+by noting that $\sum_d w_d = 1$ and summing the previous equality over $d$, we get that
 $$
 \nu (w) = D^{-1}(m^Tw)^{-(D+1)} \left(\prod_{d=1}^D m_d\right) \nu^* \left(\frac{m_1w_1}{m^Tw},\ldots,\frac{m_Dw_D}{m^Tw}\right).
+$$
+which is a well defined density on $S_{D-1}$ satisfying the mean constraint
+$$
+\int_{S_{D-1}} w_d \nu (w) {\rm d}w = D^{-1}, \quad d=1,\ldots,D.
 $$
 
 \begin{figure}[h]
@@ -182,14 +194,21 @@ $$
 \end{figure}
 
 \subsubsection{Sampling from tilted density}
-In order to sample from the tilted density, we can sample from the original density, the apply the following Acceptance-Rejection step:
+As we have seen in the proof of theorem 2, to construct the appropriate density $\nu$, we start with a density $\nu^*$, apply a change of variable to it, then tilt the result by diving it by $Dm^Tw$, which is bounded, in order to sample from the tilted density, we can sample from the original density $\nu^*$, transform the the samples, then apply the following Acceptance-Rejection step:
 
 $$
-U\leq m_{min}/m^Tw
+U\leq m_{\min}/m^Tw
 $$
-where $m_{min} = min_d m_d$
+where $m_{\min} = \min_d m_d$
 
-The number of accepted samples is proportional to $m_{min}$, so the algorithm is the most efficient when all the $m_d$ are equal
+This is because a realisation $W^*$ of $\nu^*$ that has been transformed has density $f$ and not $\nu$. But $m_{\min}/m^TW \leq 1$, so conditional on $W=w$ the event $U \leq m_{\min} /m^Tw$ has probability $m_{\min}/m^Tw$. Thus the marginal density of the $W$ for which the event occurs is proportional to $f(w)/(m^Tw)$ and has to be $\nu$.
+
+The acceptance probability is given by
+$$
+\int \frac{m_{\min}}{m^Tw}f(w){\rm d}w = Dm_{\min} \int \nu (w) {\rm d} w = Dm_{\min}
+$$
+
+Thus the number of accepted samples is proportional to $m_{min}$, so the algorithm is the most efficient when all the $m_d$ are equal to $1/D$ which would mean our original density $\nu^*$ already satisfies the criteria and we would not have to run the algorithm at all.
 
 \subsubsection{Tests}
 Figure \ref{fig:historam_tilt} some examples of tilted mixtures of beta distributions, sampled using the algorithm, and the theoretical tilted distributions using the formula.
@@ -293,7 +312,7 @@ $$
 \end{figure}
 
 \noindent
-to ensure that the parameters can take any values in $\mathbb{R}$. There are $3K-1$ parameters to estimate, which can then be transformed back into the original parameterization after estimation. Initially, we consider $K$ to be a fixed parameter, and for given data we will try to fit with various values of $K$, including the real value, to see the accuracy, and if values of $K$ that are close, but not correct give a "good enough" estimation (for example we could use a smaller $K$ than the true $K$ and still have a model that is accurate "enough" for certain purposes. Then we shall try to consider $K$ as a parameter to be estimated as well, using methods such as step-AIC/BIC to select the model.
+to ensure that the parameters can take any values in $\mathbb{R}$. There are $3K-1$ parameters to estimate, which can then be transformed back into the original parameterization after estimation. Initially, we consider $K$ to be a fixed parameter, and for given data we will try to fit with various values of $K$, including the real value, to see the accuracy, and if values of $K$ that are close, but not correct give a ``good enough" estimation (for example we could use a smaller $K$ than the true $K$ and still have a model that is accurate ``enough" for certain purposes. Then we shall try to consider $K$ as a parameter to be estimated as well, using methods such as step-AIC/BIC to select the model.
 
 \section{Numerical experiments}
 %Box plots of estimates and some measure of error (e.g. integrated squared error ? Hellinger distance ?) when (a) true distribution is fitted to the data; (b) data are simulated from some other distribution (i.e. not a mixture)
