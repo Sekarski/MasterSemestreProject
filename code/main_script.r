@@ -74,6 +74,15 @@ iserr <- function(p_t,a_t,b_t,p_e,a_e,b_e){
     x <- cbind(x1,x2)
     (destimated(x)-dtrue(x))^2
   }
+  return(integrate(integrand,0,1)$value)
+}
+
+i2err <- function(dtrue,destimated){
+  integrand <- function(x1){
+    x2 <- 1-x1
+    x <- cbind(x1,x2)
+    (destimated(x)-dtrue(x))^2
+  }
   return(integrate(integrand,0,1))
 }
 
@@ -213,12 +222,14 @@ plot_dens_estimates <- function(p_t,a_t,b_t,estimates,main,...){
   lines(x[,1],y1_t,col="blue",lwd=3)
 }
 
+
+
 #Model params
 alpha <- c(2,5)
 beta <- c(3,2)
 pi <- c(0.5,0.5)
 #Number of observations
-n <- 100 #50 100 200 500
+n <- 200 #50 100 200 500
 #number of replicas
 R <- 100 #200
 #number of different initial values per replica
@@ -227,7 +238,7 @@ NI <- 10
 smodel <- paste("Tilt of ",make_beta_string(pi,alpha,beta),sep="")
 ftitle <- paste(smodel,", observations: ",n,", replicas: ",R)
 #number of betas in the mix
-K=2
+K=3
 
 mle_parized <- c()
 n_unconverged <- 0 #will count the estimates that terminate before converging
@@ -249,9 +260,22 @@ for (i in 1:R){
   if (res$convergence == 10){nmd <- nmd + 1} #counts the number of fits where NM simplex id degenerate
   
   mle_parized <- rbind(mle_parized,res$par) #retrieve parameters in original scale
+
 }
 mle <- t(apply(mle_parized,1,parameterize)) #had to filp the result for conveinence
 
+
+# integrated 2 error
+i2e <- c()
+for (i in 1:length(mle[,1])){
+  nbetas <- length(mle[1,])/3
+  p_e <- c(mle[i,1:nbetas])
+  a_e <- c(mle[i,(nbetas+1):(2*nbetas)])
+  b_e <- c(mle[i,(2*nbetas+1):(3*nbetas)])
+  err <- iserr(pi,alpha,beta,p_e,a_e,b_e)
+  i2e <- c(i2e,err)
+}
+mean(i2e)
 
 ##################################
 # Estimates Plots
@@ -386,7 +410,7 @@ AIC <- function(mnll,K){
 
 NI <- 10 #number of different initial values per replica
 K <- 2 #number of betas in the mix
-loc <- 15 #1 17 15
+loc <- 17 #1 17 15
 q <- 0.9 #quantile
 W <- prepare_data(loc,q) #data to fit
 
@@ -440,26 +464,33 @@ hist(w[,1],breaks=20,prob=T)
 # ks.test(W[,1],w[,1])
 ks.test(W[,1],w[,1])
 
+
+
 #######################################################################################################
+############### tests using uniform original models ###########
+#######################################################################################################
+
 #Number of observations
-n <- 100 #50 100 200 500
+n <- 200 #50 100 200 500
 #number of replicas
 R <- 100 #200
 #number of different initial values per replica
 NI <- 10
 #tilte for figures
-smodel <- paste("ERROR ",make_beta_string(pi,alpha,beta),sep="")
+smodel <- paste("U(0,1)",sep="")
 ftitle <- paste(smodel,", observations: ",n,", replicas: ",R)
 #number of betas in the mix
 K=3
 
+set.seed(1337)
 mle_parized <- c()
 n_unconverged <- 0 #will count the estimates that terminate before converging
 nmd <- 0 #will count the number of Nelder-Mead degenerate cases
 for (i in 1:R){
   
-  w1 <- rnorm(n)
-  w1 <- (w1-min(w1)+10^(-6))/(max(w1)-min(w1))*0.8 
+  # w1 <- rnorm(n)
+  # w1 <- (w1-min(w1)+10^(-6))/(max(w1)-min(w1))*0.8 
+  w1 <- runif(n)
   w2 <- 1- w1
   w <- cbind(w1,w2)
 
@@ -478,14 +509,128 @@ for (i in 1:R){
 }
 mle <- t(apply(mle_parized,1,parameterize)) #had to filp the result for conveinence
 
+
 hist(w1,breaks=20,prob=T)
 
-for (i in 1:length(mle[,1])){
-  nbetas <- length(mle[1,])/3
-  p_e <- c(mle[i,1:nbetas])
-  a_e <- c(mle[i,(nbetas+1):(2*nbetas)])
-  b_e <- c(mle[i,(2*nbetas+1):(3*nbetas)])
-  m_e <- msimplex2(p_e,a_e,b_e)
-  y1_e <- dtilted(x,m_e,dsimplex2,p_e,a_e,b_e)
-  lines(x[,1],y1_e,col="red")
+
+plot_dens_estimates_unif <- function(estimates,main,...){
+  d2unif <- function(x){
+    return(dunif(x[,1]))
+  }
+  x <- make_latice(2,10^(-6),0.01)
+  m_t <- c(0.5,0.5)
+  y1_t <- dtilted(x,m_t,d2unif)
+  plot(x[,1],y1_t,col="blue",lwd=3, type="l",xlim=c(0,1),ylim=c(0,2),ylab="", main=main,...)
+  legend("topright", legend=c("True","Estimates"), col=c("blue","red"), lty=1, lwd=c(3,1))
+  
+  for (i in 1:length(estimates[,1])){
+    nbetas <- length(estimates[1,])/3
+    p_e <- c(estimates[i,1:nbetas])
+    a_e <- c(estimates[i,(nbetas+1):(2*nbetas)])
+    b_e <- c(estimates[i,(2*nbetas+1):(3*nbetas)])
+    m_e <- msimplex2(p_e,a_e,b_e)
+    y1_e <- dtilted(x,m_e,dsimplex2,p_e,a_e,b_e)
+    lines(x[,1],y1_e,col="red")
+  }
+  lines(x[,1],y1_t,col="blue",lwd=3)
+  
 }
+
+#plot to RStudio output
+plot_dens_estimates_unif(mle,ftitle)
+#plot to file
+file <- paste(IMG_DIR,"uniform/tilted/K",K,"/densities",sep="") #directory path. Works in Windos, have not tried it in MacOS or Linux
+dir.create(file.path(".",file),recursive = T) #if the directory structure doesn't existe yet, creats it
+pdf(paste(file,"/n",n,"_R",R,".pdf",sep="")) #opens an output flow to a pdf file
+plot_dens_estimates_unif(mle,ftitle) #write the plot to the pdf
+dev.off() #closes and saves the pdf
+
+
+
+#######################################################################################################
+############### tests using logitnormal original models ###########
+#######################################################################################################
+library("logitnorm")
+#Number of observations
+n <- 200 #50 100 200 500
+#number of replicas
+R <- 100 #200
+#number of different initial values per replica
+NI <- 10
+#tilte for figures
+smodel <- paste("tilted logit-normal P(N(1.5,1.5))",sep="")
+ftitle <- paste(smodel,", observations: ",n,", replicas: ",R)
+#number of betas in the mix
+K=1
+
+set.seed(1337)
+mle_parized <- c()
+n_unconverged <- 0 #will count the estimates that terminate before converging
+nmd <- 0 #will count the number of Nelder-Mead degenerate cases
+aic <- c()
+i2e <- c()
+
+
+for (i in 1:R){
+  
+  w1 <- rlogitnorm(n,mu=-1.5,sigma=1.5)
+  w2 <- 1- w1
+  w_star <- cbind(w1,w2)
+  m1 <- momentsLogitnorm(mu=-1.5,sigma=1.5)[1]
+  m <- c(m1,1-m1)
+  w <- rtilted(w_star,m)
+  
+  start <- runif((K*3-1)*NI,-0.5,0.5) #error: function cannot be evaluated at initial parameters
+  dim(start) <- c((K*3-1),NI)
+  
+  #if I try using L-BFGS-B and bounds, I get problems...
+  res <- MLestimation(inivs=start,nll=ll_tilted,data=w,method="Nelder-Mead",maxit=500) #lower=c(-Inf,-20,-20,-20,-20),upper=c(Inf,20,20,20,20)
+  # res <- MLestimation(inivs=start,nll=ll_tilted,data=w,method="L-BFGS-B",maxit=500,lower=c(-10,-5,-5,-5,-5),upper=c(10,5,5,5,5))
+  
+  
+  if (res$convergence == 1){n_unconverged <- n_unconverged + 1} #count the number of fits that reached maxit
+  if (res$convergence == 10){nmd <- nmd + 1} #counts the number of fits where NM simplex id degenerate
+  
+  mle_parized <- rbind(mle_parized,res$par) #retrieve parameters in original scale
+  aic <- c(aic,AIC(res$value,K)) #calculates the AIC for the fit
+}
+mle <- t(apply(mle_parized,1,parameterize)) #had to filp the result for conveinence
+
+
+hist(w[,1],breaks=20,prob=T)
+aic <- mean(aic)
+print(paste("mean AIC  of the fit:",aic))
+
+
+plot_dens_estimates_norm <- function(estimates,main,...){
+  d2logitnorm<- function(x){
+    return(dlogitnorm(x[,1],mu=-1.5,sigma=1.5))
+  }
+  x <- make_latice(2,10^(-6),0.01)
+  m1 <- momentsLogitnorm(mu=-1.5,sigma=1.5)[1]
+  m_t <- c(m1,1-m1)
+  y1_t <- dtilted(x,m_t,d2logitnorm)
+  plot(x[,1],y1_t,col="blue",lwd=3, type="l",xlim=c(0,1),ylim=c(0,2),ylab="", main=main,...)
+  legend("topright", legend=c("True","Estimates"), col=c("blue","red"), lty=1, lwd=c(3,1))
+  
+  for (i in 1:length(estimates[,1])){
+    nbetas <- length(estimates[1,])/3
+    p_e <- c(estimates[i,1:nbetas])
+    a_e <- c(estimates[i,(nbetas+1):(2*nbetas)])
+    b_e <- c(estimates[i,(2*nbetas+1):(3*nbetas)])
+    m_e <- msimplex2(p_e,a_e,b_e)
+    y1_e <- dtilted(x,m_e,dsimplex2,p_e,a_e,b_e)
+    lines(x[,1],y1_e,col="red")
+  }
+  lines(x[,1],y1_t,col="blue",lwd=3)
+  
+}
+
+#plot to RStudio output
+plot_dens_estimates_norm(mle,ftitle)
+#plot to file
+file <- paste(IMG_DIR,"logitnormal/tilted/K",K,"/densities",sep="") #directory path. Works in Windos, have not tried it in MacOS or Linux
+dir.create(file.path(".",file),recursive = T) #if the directory structure doesn't existe yet, creats it
+pdf(paste(file,"/n",n,"_R",R,".pdf",sep="")) #opens an output flow to a pdf file
+plot_dens_estimates_norm(mle,ftitle) #write the plot to the pdf
+dev.off() #closes and saves the pdf

@@ -1,0 +1,505 @@
+\chapter{Statistical aspects}
+\label{sec:stats}
+\section{Likelihood fitting}
+%likelihood fitting of the tilted distribution to data generated from the mixtures
+%theory, explanation of how well the ML method works
+%use of AIC/BIC to select numbers of components in the fitted mixture
+
+We use the generic R optimiser \textit{optim} to minimise the negative log-likelihood function. In order to use it we first reparameterized the parameters, in order to express the $S_2$ constraint in a way that the optimiser can understand.
+
+$$
+\pi_k = \exp(\eta_k)/\left\{ 1+ \sum_{i=2}^K\exp(\eta_i)\right\}, \quad k=2,\ldots, K, 
+$$
+and 
+$$
+\pi_1 = 1/\left\{ 1+ \sum_{i=2}^K\exp(\eta_i)\right\}.
+$$
+We also reparametrize the $\alpha$ and $\beta$ parameters as
+
+$$
+\alpha_k = \exp(\xi_k), \quad \beta_k = \exp(\zeta_k), \quad k=1,\ldots,K,
+$$
+
+\begin{figure}[h]
+\begin{tabular}{cccc}
+
+	\includegraphics[width=\textwidth/4]{../img/p05_a05_b3_p05_a2_b4/tilted/K1/densities/n50_R100.pdf}
+	&
+	\includegraphics[width=\textwidth/4]{../img/p05_a05_b3_p05_a2_b4/tilted/K1/densities/n100_R100.pdf}
+	&
+	\includegraphics[width=\textwidth/4]{../img/p05_a05_b3_p05_a2_b4/tilted/K1/densities/n200_R100.pdf}
+	&
+	\includegraphics[width=\textwidth/4]{../img/p05_a05_b3_p05_a2_b4/tilted/K1/densities/n500_R100.pdf}\\
+	
+	
+	\includegraphics[width=\textwidth/4]{../img/p05_a05_b3_p05_a2_b4/tilted/K2/densities/n50_R100.pdf}
+	&
+	\includegraphics[width=\textwidth/4]{../img/p05_a05_b3_p05_a2_b4/tilted/K2/densities/n100_R100.pdf}
+	&
+	\includegraphics[width=\textwidth/4]{../img/p05_a05_b3_p05_a2_b4/tilted/K2/densities/n200_R100.pdf}
+	&
+	\includegraphics[width=\textwidth/4]{../img/p05_a05_b3_p05_a2_b4/tilted/K2/densities/n500_R100.pdf}\\
+	
+	
+	\includegraphics[width=\textwidth/4]{../img/p05_a05_b3_p05_a2_b4/tilted/K3/densities/n50_R100.pdf}
+	&
+	\includegraphics[width=\textwidth/4]{../img/p05_a05_b3_p05_a2_b4/tilted/K3/densities/n100_R100.pdf}
+	&
+	\includegraphics[width=\textwidth/4]{../img/p05_a05_b3_p05_a2_b4/tilted/K3/densities/n200_R100.pdf}
+	&
+	\includegraphics[width=\textwidth/4]{../img/p05_a05_b3_p05_a2_b4/tilted/K3/densities/n500_R100.pdf}\\
+	
+\end{tabular}
+\caption{MLE fits to samples of size, from left to right, $n=50$, $n=100$, $n=200$ and $n=500$, with different number of betas in the mixture. From top to bottom: $K=1$, $K=2$ (which is the number that generated the data), and $K=3$, using a \textit{Nelder-Mead} optimiser each time, with a maximum of 500 iterations.}
+\label{fig:TDB1}
+\end{figure}
+
+\begin{figure}[h]
+\begin{tabular}{cc}
+\includegraphics[width=\textwidth/2]{../img/p05_a05_b3_p05_a2_b4/tilted/K2/bxplots/n50_R100.pdf}
+&
+\includegraphics[width=\textwidth/2]{../img/p05_a05_b3_p05_a2_b4/tilted/K2/bxplots/n100_R100.pdf}\\
+
+\includegraphics[width=\textwidth/2]{../img/p05_a05_b3_p05_a2_b4/tilted/K2/bxplots/n200_R100.pdf}
+&
+\includegraphics[width=\textwidth/2]{../img/p05_a05_b3_p05_a2_b4/tilted/K2/bxplots/n500_R100.pdf}\\
+\end{tabular}
+\caption{Boxplot of log MLE estimates (Nelder-Mead, maxit 500), for $K=2$ and sample of 50, 100, 200, 500 observations}
+\label{fig:TBD2}
+\end{figure}
+
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{../img/p05_a05_b3_p05_a2_b4/tilted/K1/bxplots/n200_R100.pdf}
+\caption{Boxplot of log MLE estimates (Nelder-Mead, maxit 500), for $K=1$ and sample of 200 observations}
+\label{fig:TBD6}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{../img/p05_a05_b3_p05_a2_b4/tilted/K2/pairs/n200_R100.pdf}
+\caption{pairs plot of log MLE estimates (Nelder-Mead, maxit 500), for $K=2$ and sample of 200 observations}
+\label{fig:TBD7}
+\end{figure}
+
+\noindent
+to ensure that the parameters can take any values in $\mathbb{R}$. There are $3K-1$ parameters to estimate, which can then be transformed back into the original parameterization after estimation. Initially, we consider $K$ to be a fixed parameter, and for given data we will try to fit with various values of $K$, including the real value, to see the accuracy, and if values of $K$ that are close, but not correct give a ``good enough" estimation (for example we could use a smaller $K$ than the true $K$ and still have a model that is accurate ``enough" for certain purposes. Then we shall try to consider $K$ as a parameter to be estimated as well, using methods such as step-AIC/BIC to select the model.
+
+\section{Numerical experiments}
+%Box plots of estimates and some measure of error (e.g. integrated squared error ? Hellinger distance ?) when (a) true distribution is fitted to the data; (b) data are simulated from some other distribution (i.e. not a mixture)
+%for (say) n=50, n=100, n=200, n=500, each with maybe 100, maybe 200 replicates ?
+
+
+
+As a measure of the error between the true density $f$ and the estimated density based on n samples $f_n$, we will use the integrated square error, defined as
+
+$$
+{\rm err}(f_n) := ||f_n - f||^2_2 = \int_0^1(f_n(x)-f(x))^2dx
+$$
+
+In Section \ref{sec:truedist} we fitted a tilted beta mixture to data actually simulated from a tilted beta mixture, then in Section \ref{sec:wrongdist} we fitted a tilted beta mixture to data simulated from other distributions (i.e., not from a beta mixture).
+
+For each test distribution, we simulate $R=100$ samples of $n=50$, $n=100$, $n=200$, and $n=500$ independent observations. The Maximum Likelihood Estimation is done with ten different sets of initial parameters chosen uniformly at random between $-0.5$ and $+0.5$.
+
+\subsection{Data simulated from mixture}
+\label{sec:truedist}
+
+First we generated data using a tilted mix of two beta distributions, $0.5Beta(0.5,3) + 0.5Beta(2,4)$, to test how well the maximum likelihood estimation would work. In Figure \ref{fig:TDB1} we see that for samples with a high number of observations, even estimating with a different number $K$ of components, the results are good, which suggests that we could indeed use a step-AIC/BIC method, starting with a single tilted beta distribution, and keep estimating with more until the added accuracy is no longer significant. Looking at the case n=50, however, we see a lot of volatility and artefacts. Some of the estimations have clearly not converged in 500 iterations of the Nelder-Mead algorithm, even when the correct number $K$ of betas is used.
+\\
+
+Looking at the boxplots of the log parameter for $K=2$, (Figure \ref{fig:TBD2}) we see that there are a lot of very large and very small values. This makes the analysis of the boxplots difficult. But looking at Figure \ref{fig:TDB1} we can guess what is happening: as the algorithm fits relatively well with just just a single beta distribution instead of two, all the cases with a very small $\pi_i$, is just the algorithm fitting one of the components very well, which sends the other component to insignificance. As for very small/large values for $\alpha_i$ and $\beta_i$, our hypothesis is that in the cases where the algorithm fitted one component really well, and the other component can take pretty much any value it wants, as it's contribution to the mixture has hardly any weight.
+\\
+
+To try to confirm this, first we can look at a boxplot of one of the fits with $K=1$, and indeed if we look at Figure \ref{fig:TBD6} we do see that the parameters seem a lot better contained. The group of $\beta$ outliers could be explained by the fact the original density we are working with increases asymptotically on the left side (the side controlled by the $\alpha$ parameters) so the relative importance of the right side (controlled by the $\beta$ parameter) might be low. 
+\\
+
+Another check we can do is have a look at a pairs plot for $K=2$, to see if low values of $\pi_i$ correspond to very small/large values of $\alpha_i$ and $\beta_i$. In Figure \ref{fig:TBD7}, we have the pairs plot for $n=200$ samples. Comparing Var2 (a $\pi_i$) vs Var6 (the corresponding $\beta_i$), we clearly see a clump down at the right corner, where stuff is happening according to plan, but also that as the weight of the component gets smaller, the value of the $\beta$ parameter gets larger and more volatile. If we look at Var2 vs Var4 (the corresponding $\alpha_i$), we also see a nice clump around $0$ on the right side, where the weight of the component is still significant, and as the weight gets smaller, the $\alpha$ parameter gets more volatile, with a slight tendency for very small values.
+\\
+
+
+To try and fight this phenomenon, we will try two things: the first is to use a constrained optimiser (L-BFGS-B) to keep all the log-parameters in a box of say, +/- 5, and the second is to first fit with a single component, and use those estimates, along with added random ones, as a starting point for a round of Nelder-Mead or BFGS (though, considering that the problem seems to be that the algorithms are overfitting one component in neglect of the other, this probably won't help, and method 1 might be the only course of action.).
+
+Looking at the integrated squared error, summarized in Table \ref{table:i2e}, we see that it decreases the more observations we have in our sample, which seems logical, but oddly enough, using more parameters does not necessarily reduce the error.
+
+%K1 50 i2e 0.02887087
+%K1 100 i2e 0.01727614
+%K1 200 i2e 0.008035802
+%K1 500 i2e 0.005372664
+
+%K2 50 i2e 0.04023076
+%K2 100 i2e 0.0181179
+%K2 200 i2e 0.0112013
+%K2 500 i2e
+
+%K3 50 i2e 0.03566757
+%K3 100 i2e 0.02194841
+%K3 200 i2e 0.01158833
+%K3 500 i2e
+\begin{table}
+\centering
+\begin{tabular}{ |c|c|c|c| } 
+\hline
+K & n=50 & n=100 & n=200 \\
+\hline
+1 & 0.029 & 0.017 & 0.008 \\
+\hline
+2 & 0.040 & 0.018 & 0.011\\
+\hline
+3 & 0.036 & 0.022 & 0.011\\
+\hline
+\end{tabular}
+\caption{Integrated square error for the beta mixture fits, with $K=1,2,3$ and $n=50,100,200$. }
+\label{table:i2e}
+\end{table}
+
+
+
+\subsection{Data simulated from other distributions}
+\label{sec:wrongdist}
+We will try to fit tilted mixtures to 2 other distributions. The first is simply the uniform distribution on $[0,1]$ and the second is to a logit-normal distribution.
+
+\subsubsection{uniform distribution}
+In the case were the underlying distribution is a $U(0,1)$, we expect to see a good fit with $K=1$, as the uniform distribution is identical to a $Beta(1,1)$ distribution. In Figure \ref{fig:uniform_fits} we have ploted fits with 1 and 2 components. Unsurprisingly, there is basically no difference between using 1 or 2 components, which makes sense, as the data war generated from a beta with 1 component. Unsurprisingly either, the more observations in each sample, the less volatility there is in the fits.
+
+What is more interesting is the general shape of the fits. We know that the Beta distribution will be a horizontal line if and only if both the $\alpha$ and $\beta$ parameters are equal to 1. Even if they are a little off, the ends of the distribution will curl up to infinity or down to 0 (in fact, this probably only happens when a parameter get closer to 1 than the machine precision of the computer, and it rounds it to 1), and because it is very unlikely to get exactly 1, we see the ends going vertical on each en of the graphs, regardless of the number of observations.
+
+We did not include the boxplots for these cases, as they show similar behaviours as the ones fitting actual tilted beta mixtures.
+
+\begin{figure}[h]
+\begin{tabular}{cccc}
+
+	\includegraphics[width=\textwidth/4]{../img/uniform/tilted/K1/densities/n50_R100.pdf}
+	&
+	\includegraphics[width=\textwidth/4]{../img/uniform/tilted/K1/densities/n100_R100.pdf}
+	&
+	\includegraphics[width=\textwidth/4]{../img/uniform/tilted/K1/densities/n200_R100.pdf}
+	&
+	\includegraphics[width=\textwidth/4]{../img/uniform/tilted/K1/densities/n500_R100.pdf}\\
+	
+	
+	\includegraphics[width=\textwidth/4]{../img/uniform/tilted/K2/densities/n50_R100.pdf}
+	&
+	\includegraphics[width=\textwidth/4]{../img/uniform/tilted/K2/densities/n100_R100.pdf}
+	&
+	\includegraphics[width=\textwidth/4]{../img/uniform/tilted/K2/densities/n200_R100.pdf}
+	&
+	\includegraphics[width=\textwidth/4]{../img/uniform/tilted/K2/densities/n500_R100.pdf}\\
+	
+\end{tabular}
+\caption{MLE fits to samples of size, from left to right, $n=50$, $n=100$, $n=200$ and $n=500$, with different number of betas in the mixture. From top to bottom: $K=1$ and $K=2$, using a \textit{Nelder-Mead} optimiser each time, with a maximum of 500 iterations. The underlying distribution is a uniform distribution, which is also a $Beta(1,1)$ distribution.}
+\label{fig:uniform_fits}
+\end{figure}
+
+
+
+
+
+\subsubsection{logit-normal distribution}
+Next we tried using a logit-normal distribution with parameters $\mu=-1.5$ and $\sigma=1.5$ to generate data to fit. I thought this tilt would be fit better as the ends drop off to 0, similarly to a beta distribution with parameters approaching 1 from the top, but with a small dip in the center which I thought would force at least a second component to be fit as well. But looking at Figure \ref{fig:logitnormal_fits} it ones again looks like there is not much difference between using one or more components in the mixture. Much as in the uniform case, unsurprisingly the fits get less variable the more observations there are in the samples.
+I calculated the mean AIC for the different cases, and the results are summarized in Table \ref{table:logitnormal_aic}. The results were not as I had expected before doing the simulations, as I mentioned before, I expected there to be significantly smaller AIC with more than one component, however the results do match what I expected after looking at Figure \ref{fig:logitnormal_fits}. The AIC is always lowest for the case $K=1$, and it increases roughly by 6 every time a component is added, which corresponds to the minimum log likelihood not changing but the penalty for the number of parameters increase by $2(K_{i+1}-K_i)=6$. Unsurprisingly the AIC is better the more observations there are the in sample, as there is more information available.
+
+
+
+\begin{figure}[h]
+\begin{tabular}{cccc}
+
+	\includegraphics[width=\textwidth/4]{../img/logitnormal/tilted/K1/densities/n50_R100.pdf}
+	&
+	\includegraphics[width=\textwidth/4]{../img/logitnormal/tilted/K1/densities/n100_R100.pdf}
+	&
+	\includegraphics[width=\textwidth/4]{../img/logitnormal/tilted/K1/densities/n200_R100.pdf}
+	&
+	\includegraphics[width=\textwidth/4]{../img/logitnormal/tilted/K1/densities/n500_R100.pdf}\\
+	
+	
+	\includegraphics[width=\textwidth/4]{../img/logitnormal/tilted/K2/densities/n50_R100.pdf}
+	&
+	\includegraphics[width=\textwidth/4]{../img/logitnormal/tilted/K2/densities/n100_R100.pdf}
+	&
+	\includegraphics[width=\textwidth/4]{../img/logitnormal/tilted/K2/densities/n200_R100.pdf}
+	&
+	\includegraphics[width=\textwidth/4]{../img/logitnormal/tilted/K2/densities/n500_R100.pdf}\\
+	
+	
+	\includegraphics[width=\textwidth/4]{../img/logitnormal/tilted/K3/densities/n50_R100.pdf}
+	&
+	\includegraphics[width=\textwidth/4]{../img/logitnormal/tilted/K3/densities/n100_R100.pdf}
+	&
+	\includegraphics[width=\textwidth/4]{../img/logitnormal/tilted/K3/densities/n200_R100.pdf}
+	&
+	\includegraphics[width=\textwidth/4]{../img/logitnormal/tilted/K3/densities/n500_R100.pdf}\\
+	
+\end{tabular}
+\caption{MLE fits to samples of size, from left to right, $n=50$, $n=100$, $n=200$ and $n=500$, with different number of betas in the mixture. From top to bottom: $K=1$, $K=2$ and $K=3$, using a \textit{Nelder-Mead} optimiser each time, with a maximum of 500 iterations. The underlying distribution is a tilted logit-normal distribution.}
+\label{fig:logitnormal_fits}
+\end{figure}
+
+
+
+
+
+%K1 50 mean AIC 1.43607260047953
+%K1 100 mean AIC 0.976760329274953
+%K1 200 mean AIC -0.481403850975143
+%K1 500 mean AIC -4.68063049392501
+
+%K2 50 mean AIC 7.61800189488522
+%K2 100 mean AIC 7.06296651228844
+%K2 200 mean AIC 5.74888801826482
+%K2 500 mean AIC 1.78131486056836
+
+%K3 50 mean AIC 13.5638625632987
+%K3 100 mean AIC 13.555834697778
+%K3 200 mean AIC 11.5759094650009
+%K3 500 mean AIC 7.76230858780803
+
+
+\begin{table}
+\centering
+\begin{tabular}{ |c|c|c|c|c| } 
+\hline
+K & n=50 & n=100 & n=200 & n=500\\
+\hline
+1 & 1.44 & 0.98 & -0.48 & -4.68\\
+\hline
+2 & 7.62 & 7.06 & 5.75 & 1.78\\
+\hline
+3 & 13.56 & 13.56 & 11.58 & 1.76\\
+\hline
+\end{tabular}
+\caption{AIC for fits to a tilted logit-normal model of parameters $\mu=-1.5$ and $\sigma=1.5$. }
+\label{table:logitnormal_aic}
+\end{table}
+
+In call cases, for this original distribution, we lose some of the observations after tilting, because of the acceptance rejection step. In fact, only about 60\% percent of the data remains, which would also contribute to lowering the quality of the fits. As for the uniform case, we will omit the boxplots of the parameters estimates, as they are much the same as the in case with beta mixtures.
+
+One thing that I noticed at the end of doing this part, is that many of the fits reached the maximum iteration of \texttt{Nelder-Mead}, before achieving converging, although this is less the case with observation-high samples. So I will try to up the amount of maximum iterations for \texttt{Nelder-Mead} from 500 to 1'000 in the next section and monitor the convergence of the fits.
+
+
+
+\section{Numerical example}
+%Fitting the mixture to some (standard?) datasets to see how many components are needed, asses the quality of the fit, etc.
+
+\subsection{The data}
+The data we will be exploring consists of 2 variables, daily maximum windspeed (mph) and the Fosberg fire weather index FFWI, for 20 locations in Southern California. The FFWI is an index to give some measure of the potential influence of the weather on wildland fires. It is calculated using temperature, relative humidity and windspeed, and calibrated to equal 100 when the windspeed is 30 mph and the air moisture content is 0. Any value of FFWI higher than 100 is rounded down to 100.
+The data originated from the Hadley Centre (\url{https://www.metoffice.gov.uk/hadobs/hadisd/}) and were processed by Professor Ben Shaby to get them into the form they are now. Notably, the data went under some corrections for bad data, windspeed conversion from m/s to mph, calculation of the FFWI and they may have been homogenised to deal with instrument drift and other issues. The windspeed values may therefore be seem a bit odd, and to get windspeeds in m/s again, the windspeed would need to be divided by $2.23694$.
+The processed data is available on Github (\url{https://github.com/Sekarski/MasterSemestreProject/data/had_ffwi_wind-SantaAna.RData}).
+
+For this project we have chosen the 3 locations out of the 20 that have the most data point to study. These are locations 1,17 and 15, with respectively 15'400, 15'399 and 15'372 points, after removing missing or incomplete data points.
+
+\subsection{Making the data angular}
+
+\begin{figure}[h]
+\begin{tabular}{ccc}
+\includegraphics[width=\textwidth/3]{../img/loc1/quantile90/histogram.pdf}
+&
+\includegraphics[width=\textwidth/3]{../img/loc17/quantile90/histogram.pdf}
+&
+\includegraphics[width=\textwidth/3]{../img/loc15/quantile90/histogram.pdf}\\
+\end{tabular}
+\caption{Histograms for the angular data above the 90\% quantile for locations 1,17 and 15 respectively.}
+\label{fig:data_hist}
+\end{figure}
+
+In order to fit our tilted mixtures, we first need to make the data angular.
+Let $X=(X_1,X_2)$ be the bivariate data at one of the locations, and $X_i = (x_{i1}, \ldots, x_{in})$ for $i=1,2$.
+We start by fitting a Generalized Pareto Distribution to the exceedances over thresholds $u_i$ on each margins. For the thresholds, we chose the 90\% quantiles for each margin. We get estimates $\hat \sigma_i$ and $\hat \xi_i$  and fitted distributions
+$$
+\hat F_i(x) = n^{-1} \sum_{j=1}^n {\rm I}_{\{x_{ij}\leq x\}} (x)  {\rm I}_{\{x\leq u_i\}} (x) + \left[ 1 - \frac{n_{u_i}}{n} \times \left\{1 + \hat\xi_i\frac{(x-u_i)}{\hat \sigma_i} \right\}^{-1/\hat\xi_i}_+ \right] {\rm I}_{\{x>u_i\}} (x),
+$$
+Were $n_{u_i}$ is the number of observations above the threshold $u_i$. We then apply the transformation $ Z_i = -1/ \log \hat F_i(X_i)$ to bring $X$ to the unit Fréchet scale, then tilt the data by setting
+$$
+W_i = Z_i/(Z_1 + Z_2), \quad i=1,2.
+$$
+Finally, we get the data on which we will do the fitting by selecting all the observation where $z_1j + z_2j$ are above the 90\% quantile of $Z_1 + Z_2$. That is:
+$$
+W = \{ (w_{1j},w_{2j}) : z_{1j} + z_{2j} > r_{90} \}
+$$
+Where $r_{90}$ is the 90\% quantile. Figure \ref{fig:data_hist} show what the distribution of $W_1$ looks like. All three locations have different shapes.
+
+
+\subsection{Fitting}
+%K1 loc1 fit AIC: -458.409057486619 1 1.15 5.83
+%K2 loc1 fit AIC: -711.67001541868 0.9356 15.42  2.402 0.644 0.911 0.952
+%K3 loc1 fit AIC: -705.333755225558 0.9456 13.672 2.41 0.0258 0.893 3.5 0.0286 2.547 2.53
+%K1 loc17 fit AIC: -147.172809890411 1 0.88 2.41
+%K2 loc17 fit AIC: -194.223475679536  0.9348 2.17 1.68 0.0652 0.666 14.01
+%K3 loc17 fit AIC: -185.575120747714 0.172 0.567 0.988 0.713 3.065 1.678 0.115 4.122 1.546
+%K1 loc15 fit AIC: -79.956280458566 1 1.4 1.29
+%K2 loc15 fit AIC: -116.805491118043 0.0665 1.26 0.667 0.9335 8.22 0.974
+%K3 loc15 fit AIC: -110.70470605339 0.9123 5.17 1.012 0.715 2.13 0.946 0.162 1.48 7.625
+
+
+\begin{figure}[h]
+\begin{tabular}{ccc}
+\includegraphics[width=\textwidth/3]{../img/loc1/quantile90/fit_K1.pdf}
+&
+\includegraphics[width=\textwidth/3]{../img/loc1/quantile90/fit_K2.pdf}
+&
+\includegraphics[width=\textwidth/3]{../img/loc1/quantile90/fit_K3.pdf}\\
+
+
+\includegraphics[width=\textwidth/3]{../img/loc17/quantile90/fit_K1.pdf}
+&
+\includegraphics[width=\textwidth/3]{../img/loc17/quantile90/fit_K2.pdf}
+&
+\includegraphics[width=\textwidth/3]{../img/loc17/quantile90/fit_K3.pdf}\\
+
+
+\includegraphics[width=\textwidth/3]{../img/loc15/quantile90/fit_K1.pdf}
+&
+\includegraphics[width=\textwidth/3]{../img/loc15/quantile90/fit_K2.pdf}
+&
+\includegraphics[width=\textwidth/3]{../img/loc15/quantile90/fit_K3.pdf}\\
+\end{tabular}
+\caption{Fits to locations 1, 17 and 15, using from left to right $K=1,2,3$. Using the \texttt{Nelder-Mead} optimizer, with a maximum of 1'000 iterations.}
+\label{fig:data_fit}
+\end{figure}
+
+
+We can see graphically the result of fitting tilted mixtures to locations 1,17 and 15 using 1,2, and 3 components in Figure \ref{fig:data_fit}. Visually there seems to be a big improvement between $K=1$ and $K=2$ but then hardly any improvement between 2 and 3 component fits, suggesting that there is no extra gain in using 3 component versus using only 2. Quantitatively, looking at Table \ref{table:estimates}, we see that a forward step-AIC method would also chose the models with $K=2$. So it would seem that using 2 components is the way to go here. However there is an issue: the \texttt{Nelder-Mead} reached the maximum number of iterations, which is set at 1'000, before converging already in the cases $K=2$, which means that the fact that the 3 component cases have higher AIC may just be that we didn't give it enough time, and as it has to fit more 3 extra parameters it is penalized more while not getting to it's peak Likelihood.
+We could just up the maximum number of iterations, but instead we are going to keep the maximum number of iterations the same, but switch from the \texttt{Nelder-Mead} optimiser to the \texttt{BFGS} optimizer, which is a little more aggressive in it's exploration of the parameter space. This means that it will take bigger steps towards convergence, but might be more unstable.
+
+
+\begin{figure}[h]
+\begin{tabular}{cccc}
+\includegraphics[width=\textwidth/4]{../img/loc1/quantile90/fit_K3_BFGS.pdf}
+&
+\includegraphics[width=\textwidth/4]{../img/loc1/quantile90/fit_K4_BFGS.pdf}
+&
+\includegraphics[width=\textwidth/4]{../img/loc1/quantile90/fit_K5_BFGS.pdf}
+&
+\includegraphics[width=\textwidth/4]{../img/loc1/quantile90/fit_K6_BFGS.pdf}\\
+
+
+\includegraphics[width=\textwidth/4]{../img/loc17/quantile90/fit_K3_BFGS.pdf}
+&
+\includegraphics[width=\textwidth/4]{../img/loc17/quantile90/fit_K4_BFGS.pdf}
+&
+\includegraphics[width=\textwidth/4]{../img/loc17/quantile90/fit_K5_BFGS.pdf}
+&
+\includegraphics[width=\textwidth/4]{../img/loc17/quantile90/fit_K6_BFGS.pdf}\\
+
+
+\includegraphics[width=\textwidth/4]{../img/loc15/quantile90/fit_K3_BFGS.pdf}
+&
+\includegraphics[width=\textwidth/4]{../img/loc15/quantile90/fit_K4_BFGS.pdf}
+&
+\includegraphics[width=\textwidth/4]{../img/loc15/quantile90/fit_K5_BFGS.pdf}
+&
+\includegraphics[width=\textwidth/4]{../img/loc15/quantile90/fit_K6_BFGS.pdf}\\
+
+\end{tabular}
+\caption{Fits to locations 1, 17 and 15, using from left to right $K=3,4,5,6$. Using the \texttt{BGFS} optimizer.}
+\label{fig:data_fit_long}
+\end{figure}
+
+
+
+\begin{table}
+\centering
+\begin{tabular}{ |c|c|c||c|c|c||c|c|c||c|c|c| } 
+\hline
+Loc & K & AIC & $\hat\pi_1$ & $\hat\alpha_1$ & $\hat\beta_1$
+& $\hat\pi_2$ & $\hat\alpha_2$ & $\hat\beta_2$
+& $\hat\pi_3$ & $\hat\alpha_3$ & $\hat\beta_3$\\
+\hline
+ \hline
+1 & 1 & -458 & 1 & 1.15 & 5.83
+& & &
+& & & \\
+
+1 & 2 & -711 & 0.94 & 15.42 &  2.4
+& 0.06 & 0.91 & 0.95
+& & &\\
+
+1 & 3 & -705 & 0.94 & 13.67 & 2.41
+& 0.03 & 0.89 &  3.5
+& 0.03 & 2.55 & 2.53 \\
+\hline
+17 & 1 & -147 & 1 & 0.88 & 2.41
+& & &
+& & &\\
+
+17 & 2 & -194 & 0.94 & 2.17 & 1.68
+ &  0.06 & 0.67  & 14.01
+ & & &\\
+ 
+17 & 3 & -185 & 0.17  &  0.57  &   0.99
+& 0.71  & 3.06 & 1.68
+ & 0.12 & 4.12 & 1.55\\
+ \hline
+15 & 1 & -79 & 1 & 1.4 & 1.29
+& & &
+& & &\\
+
+15 & 2 & -116 & 0.067 & 1.26 & 0.67
+& 0.93 & 8.22 & 0.97
+& & &\\
+
+15 & 3 & -110 & 0.91 & 5.17 & 1.01
+& 0.07 & 2.13 & 0.95
+&  0.02 & 1.48  & 7.63 \\
+ \hline
+\end{tabular}
+\caption{MLE estimates for locations 1,17 and 15, using K=1,2 and 3 components, with \texttt{Nelder-Mead} using maximum 1000 iterations.}
+\label{table:estimates}
+\end{table}
+
+%K3 loc 1 AIC -1029.6813453965
+%K4 loc 1 AIC -1070.60708708505
+%K5 loc 1 AIC -1073.64455065985
+%K6 loc 1 AIC -1093.31684082104
+%K7 loc 1 AIC -1081.75167135068
+
+%K3 loc17 AIC -188.413362805396
+%K4 loc17 AIC -186.111154454565
+%K5 loc17 AIC -198.220480100418
+%K6 loc17 AIC -350.716244649545
+
+%K3 loc15 AIC -111.903125507642
+%K4 loc15 AIC -105.90322767153
+%K5 loc15 AIC -99.9032260849303
+%K6 loc15 AIC -93.9032295849453
+
+In Table \ref{table:AIC} we can see the AIC value for mixtures with more components, using \texttt{BFGS} with a maximum of 1'000 iterations. For location 1, we do indeed see that using more components yields quite a bit better AIC value compared to $K=2$ from Table \ref{table:estimates} and a forward step-AIC method would chose $K=6$. For locations 17 and 15 however, the AIC is smaller for $K=3$, even using \texttt{BFGS} compared to $K=2$ using \texttt{Nelder-Mead} and forward step-AIC methods would still keep $K=2$. We can see that if we skip a few $K$s the AIC start decreasing again, even massively between $K=5$ and $K=6$ for location 17. Looking at the graphs of the fit, in Figure \ref{fig:data_fit_long}, this is probably due to overfitting. 
+As for location 15, we see that the AIC increases by 6 for every added component, which means that the minimum negative log likelihood is not changing at all, while the penalty for parameter increases (${\rm AIC} = 2(3K-1) - 2\log(L)$)
+
+For the rest of the analysis, we shall use the fits with 6, 2 and 2 components respectively for locations 1, 17 and 15.
+
+\begin{table}
+\centering
+\begin{tabular}{|c||c|c|c|c|c|}
+\hline
+loc & K=3 & K=4 & K=5 & K=6 & K=7\\
+\hline
+1 & -1029 & -1070 & -1073 & -1093 & -1081 \\
+17 & -188 & -186 & -198 & -350 & \\
+15 & -112 & -106 & -100 & -94 & \\
+\hline
+\end{tabular}
+\caption{AIC for fits using \texttt{BFGS} for various number of components}
+\label{table:AIC}
+\end{table}
+
+\subsubsection{Goodness of fit}
+To check the goodness of fit, we will do several statistical test. The first test we will do, it a Kolmogorov-Smirnov test to see if it is plausible that the data came from the tilted mixtures we selected above. The KS test will test the null hypothesis that this is the case, versus the alternative hypothesis that it does not come from the selected tilted mixture.
+
+
+
+For location 17, the model is a tilt of $0.94Beta(2.08,1.71) + 0.06Beta(0.67, 16.33)$. The KS test gives us a p-value of $0.056$. This is low, but depending on what level we chose this could be significant or not.
+%D = 0.036703, p-value = 0.05588
+
+For location 15, the model is a tilt of $0.95Beta(7.77,0.98) + 0.05Beta(1.25,1.04)$. The KS test gives a p-value of $0.059$. This is low, but depending on what level we chose this could be significant or not.
+%D = 0.042725, p-value = 0.05935
+
+
+For location 1.
+There is a problem with this model, in that it has means $m_1 \approx 0$ and $m_2 \approx 1$ such that it is impossible to sample from this distribution in \texttt{R} using the method in Section \ref{sec:tilting} because the value $m_{\min}/m^Tw \approx 0$ and the acceptance rate is for all intent and purposes, zero. A KS test using the \texttt{ks.test()} command cannot be done.
+Switching back to the model were $K=3$, which has the most significance increase in its AIC when adding a component, we get a p-value of $0.059$ for the KS test. This is low, but depending on what level we chose this could be significant or not.
+A model with a higher $K$ might be better.
+%D = 0.0346, p-value = 0.05947
+
+
+The problem with the KS test in \texttt{R} is that it uses samples from the null distribution, which means that the p-value will vary for every sample (and sample sizes), making the value not particularly useful. I have set a seed in \texttt{R} for reproducibility. What might be better, is to do the test over and over so many times, than take the mean p-value. It may just be here that I took too many sample of the null distribution ($\approx 100 \times$ as many as in the fitted data)

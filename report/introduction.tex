@@ -1,0 +1,45 @@
+\chapter{Introduction}
+\label{sec:intro}
+%Motivation, based on chapter 8 (mostly sections 8.1 and 8.2) of Coles (2001) and Boldi and Davison (2007)
+%layout of project
+
+Modelling extreme events is becoming more and more important, mostly in order to assess risks (financial, ecological, structural, $\ldots$). Modelling of univariate extremes is well documented and explored, using techniques such as block maxima, threshold exceedances and point processes.
+However, things become, as usual, more complicated in higher dimensions. Multivariate extremes suffer from problems that affect univariate extremes less, such as the curse of dimensionality and sparsity.
+
+The most primitive way to deal with multivariate extremes is to study each component as a univariate process. However, this is limiting, as we could easily imaging that there is interdependence of the components, which we lose by considering the components independently. Another reason, as is stated in \cite{Coles}, is that the combination of the individual processes might be of more interest than each process individually.
+
+Methods analogous to block maxima and threshold analysis exist for multivariate cases and we can find models for extreme multivariate events, but we do not have a characterization for the class of all the models. Theorem 8.1 from \cite{Coles} defines a family of bivariate extreme value distributions (and can be generalized to general multivariate case) that arise as the limiting distribution for componentwise block maxima. 
+
+Here is Theorem 8.1 restated (for a bivariate process) for completeness:
+
+\begin{theorem}
+
+Let $M^*_n = (\max_{i=1,...,n} \{X_i\}/n, \max_{i=1,...,n} \{Y_i\}/n)$ be the vector of rescaled componentwise maxima, where $(X_i,Y_i)$ are independent vectors with standard Fréchet marginal distributions. Then if
+$$
+\mathbb{P}\{M^*_n \leq (x,y) \} \xrightarrow[]{d} G(x,y),
+$$
+where $G$ is a non-degenerate distribution function, then $G$ has the form
+$$
+G(x,y) = \exp\{-V(x,y)\}, \quad x>0, y>0
+$$
+where
+$$
+V(x,y) = 2 \int^1_0 \max \left(\frac{w}{x},\frac{1-w}{y}\right)d\nu(w)
+$$
+and $\nu$ is a distribution on $[0,1]$ satisfying the mean constraint
+$$
+\int_0^1 wd\nu(w) = 1/2.
+$$
+
+
+\end{theorem}
+
+
+The problem is that we don't know how to characterize $\nu$. An approach is to try and approximate the class arbitrarily well, using parametric subfamilies or nonparametric methods and another way is to use nonparametric methods.
+
+Boldi and Davison \cite{BoldiDavison} approached the problem by using a semi-parametric model based on mixtures of Dirichlet distributions that weakly approximates the class of limit distributions.
+
+In this project we will try to use mixtures of beta distributions that have been tilted using Theorem 2 from Coles and Tawn \cite{ColesTawn} to satisfy the mean constraints.
+
+In Section \ref{sec:multivariate} we will discuss how it is possible to tilt a distribution for it to satisfy the mean constraints, how to sample from a tilted distribution, and provide examples of tilted densities and sampling therefrom. 
+In Section \ref{sec:stats} we will explore how to fit a tilted distribution to some data, using maximum likelihood, fit for some artificially generated data and fit from some real world data, and assess the quality of the fits.
