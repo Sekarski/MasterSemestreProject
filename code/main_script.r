@@ -5,6 +5,8 @@ source("algorithm.r") #loads the ML esimating algorithm
 
 load("../data/had_ffwi_wind-SantaAna.RData")
 
+IMG_DIR <- "../img/"
+
 ####################################
 # Auxiliary functions
 ####################################
@@ -104,7 +106,7 @@ make_latice <- function(D,eps,spacing){
 
 #constructs the relative path from the code folder to where the images will be saved
 image_path_string <- function(p,a,b,tilted,K,plot_type,n,R){
-  string <- "../img/"
+  string <- IMG_DIR
   for (i in 1:length(p)){
     string <- paste(string,"p",gsub("\\.","",p[i]),"_a",gsub("\\.","",a[i]),"_b",gsub("\\.","",b[i]),"_",sep="")
   }
@@ -297,13 +299,193 @@ pdf(paste(file,"/n",n,"_R",R,".pdf",sep=""))
 pairs(log(mle),main=ftitle)
 dev.off()
 
-
+#TODO jiggle
 
 #######################################
 ######## Real world data ##############
 ######################################
 
-ffwi90q <- quantile(ffwi.mat, c(0.9), na.rm=T)
-wind90q <- quantile(wind.mat, c(0.9), na.rm=T)
+library("evd")
+apply(ffwi.mat,1,function(x) sum(is.na(x)))
+apply(wind.mat,1,function(x) sum(is.na(x)))
+#we see that the best locations (least NA) are 1,17,15,9
+
+F_hat <- function(x,x_i,n,u,n_u,sigma,xi){
+  if (x <= u){
+    y <- sum(x_i<=x)/n
+  }
+  else{
+    temp <- (1+xi*(x-u)/sigma)
+    if (temp < 0){
+      temp <- 0
+    }
+    y <- 1-n_u/n*temp^(-1/xi)
+  }
+  return(y)
+}
+
+prepare_data <- function(loc,q){
+  data <- rbind(ffwi.mat[loc,],wind.mat[loc,])
+  data <- data[ , colSums(is.na(data)) == 0] #remove collums with NA
+ 
+  data.q <- apply(data,1,quantile,c(q))
+  
+  fit.ffwi <- fpot(data[1,],threshold=data.q[1])
+  fit.wind <- fpot(data[2,],threshold=data.q[2])
+
+  FX1 <- lapply(data[1,],F_hat,data[1,],fit.ffwi$npp,fit.ffwi$threshold,fit.ffwi$nhigh,fit.ffwi$estimate[["scale"]],fit.ffwi$estimate[["shape"]])
+  FX2 <- lapply(data[2,],F_hat,data[2,],fit.wind$npp,fit.wind$threshold,fit.wind$nhigh,fit.wind$estimate[["scale"]],fit.wind$estimate[["shape"]])
+  
+  FX1 <- unlist(FX1)
+  FX2 <- unlist(FX2)
+  
+  Z1 <- -1/log(FX1)
+  Z2 <- -1/log(FX2)
+  
+  R <- Z1 + Z2
+  
+  W1 <- Z1/R
+  W2 <- Z2/R
+  
+  r09 <- quantile(R,c(q))
+  
+  W1 <- W1[R>r09]
+  W2 <- W2[R>r09]
+  
+  W=cbind(W1,W2)
+  return(W)
+}
 
 
+### Histograms of the data ###
+par(mfrow=c(1,3))
+for (l in c(1,17,15)){
+  q <- 0.9
+  W <- prepare_data(l,q)
+  title <- paste("loc: ",l,", quantile: ",q*100,"%",sep="")
+  hist(W[,1],breaks=50,prob=T,main=title,xlab="w1")
+  
+  #print to files
+  file <- paste(IMG_DIR,"loc",l,"/quantile",q*100,sep="")
+  dir.create(file.path(".",file),recursive = T)
+  pdf(paste(file,"/histogram.pdf",sep=""))
+  hist(W[,1],breaks=50,prob=T, main=title,xlab="w1")
+  dev.off()
+  #end print to files
+}
+#############################
+
+# calculates the AIC of a fit, given the minimum negative log likelihood and the number of components
+AIC <- function(mnll,K){
+  k = K*3-1
+  return(2*k + 2*mnll)
+}
+
+
+
+
+NI <- 10 #number of different initial values per replica
+K <- 2 #number of betas in the mix
+loc <- 15 #1 17 15
+q <- 0.9 #quantile
+W <- prepare_data(loc,q) #data to fit
+
+set.seed(42) #for reproducability
+start <- runif((K*3-1)*NI,-0.5,0.5) #initial values
+dim(start) <- c((K*3-1),NI) #reshaped for better usability and understandability
+
+res <- MLestimation(inivs=start,nll=ll_tilted,data=W,method="BFGS",maxit=1000) #lower=c(-Inf,-20,-20,-20,-20),upper=c(Inf,20,20,20,20)
+# res <- MLestimation(inivs=start,nll=ll_tilted,data=W,method="L-BFGS-B",maxit=500,lower=c(-5,-10,-10,-10,-10),upper=c(5,10,10,10,10))
+
+mle <- parameterize(res$par) #retrieves the parameter estimates in original scale from the fit
+aic <- AIC(res$value,K) #calculates the AIC for the fit
+
+### split parameters ###
+p_e <- c(mle[1:K])
+a_e <- c(mle[(K+1):(2*K)])
+b_e <- c(mle[(2*K+1):(3*K)])
+########################
+
+### plots ###
+x <- make_latice(2,10^(-6),0.001) #makes a latice on the simplex, for plotting functions
+par(mfrow=c(1,1))
+
+m_e <- msimplex2(p_e,a_e,b_e)
+y1_e <- dtilted(x,m_e,dsimplex2,p_e,a_e,b_e)
+
+hist(W[,1],breaks=50,prob=T,main=paste("Loc: ",loc,",quantile: ",q*100,",fit: K=",K,sep=""),xlab="w1")
+lines(x[,1],y1_e,col="red",lwd=2)
+
+### print to file ###
+file <- paste(IMG_DIR,"loc",loc,"/quantile",q*100,sep="")
+dir.create(file.path(".",file),recursive = T)
+pdf(paste(file,"/fit_K",K,"_BFGS.pdf",sep=""))
+hist(W[,1],breaks=50,prob=T,main=paste("Loc: ",loc,",quantile: ",q*100,",fit: K=",K,sep=""),xlab="w1") #zoomed version
+lines(x[,1],y1_e,col="red",lwd=2)
+dev.off()
+####################
+
+
+print(paste("AIC  of the fit:",aic))
+##############
+
+##############################################
+### Goodness of fit ################
+#KS test
+set.seed(314)
+w_star <- rsimplex2(10000,p_e,a_e,b_e)
+m <- msimplex2(p_e,a_e,b_e)
+w <- rtilted(w_star,m)
+hist(w[,1],breaks=20,prob=T)
+# ks.test(W[,1],w[,1])
+ks.test(W[,1],w[,1])
+
+#######################################################################################################
+#Number of observations
+n <- 100 #50 100 200 500
+#number of replicas
+R <- 100 #200
+#number of different initial values per replica
+NI <- 10
+#tilte for figures
+smodel <- paste("ERROR ",make_beta_string(pi,alpha,beta),sep="")
+ftitle <- paste(smodel,", observations: ",n,", replicas: ",R)
+#number of betas in the mix
+K=3
+
+mle_parized <- c()
+n_unconverged <- 0 #will count the estimates that terminate before converging
+nmd <- 0 #will count the number of Nelder-Mead degenerate cases
+for (i in 1:R){
+  
+  w1 <- rnorm(n)
+  w1 <- (w1-min(w1)+10^(-6))/(max(w1)-min(w1))*0.8 
+  w2 <- 1- w1
+  w <- cbind(w1,w2)
+
+  start <- runif((K*3-1)*NI,-0.5,0.5) #error: function cannot be evaluated at initial parameters
+  dim(start) <- c((K*3-1),NI)
+  
+  #if I try using L-BFGS-B and bounds, I get problems...
+  res <- MLestimation(inivs=start,nll=ll_tilted,data=w,method="Nelder-Mead",maxit=500) #lower=c(-Inf,-20,-20,-20,-20),upper=c(Inf,20,20,20,20)
+  # res <- MLestimation(inivs=start,nll=ll_tilted,data=w,method="L-BFGS-B",maxit=500,lower=c(-10,-5,-5,-5,-5),upper=c(10,5,5,5,5))
+  
+  
+  if (res$convergence == 1){n_unconverged <- n_unconverged + 1} #count the number of fits that reached maxit
+  if (res$convergence == 10){nmd <- nmd + 1} #counts the number of fits where NM simplex id degenerate
+  
+  mle_parized <- rbind(mle_parized,res$par) #retrieve parameters in original scale
+}
+mle <- t(apply(mle_parized,1,parameterize)) #had to filp the result for conveinence
+
+hist(w1,breaks=20,prob=T)
+
+for (i in 1:length(mle[,1])){
+  nbetas <- length(mle[1,])/3
+  p_e <- c(mle[i,1:nbetas])
+  a_e <- c(mle[i,(nbetas+1):(2*nbetas)])
+  b_e <- c(mle[i,(2*nbetas+1):(3*nbetas)])
+  m_e <- msimplex2(p_e,a_e,b_e)
+  y1_e <- dtilted(x,m_e,dsimplex2,p_e,a_e,b_e)
+  lines(x[,1],y1_e,col="red")
+}
